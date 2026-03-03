@@ -1,0 +1,28 @@
+[toolchain]
+anchor_version = "0.30.1"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+rate_limiter = "RateLm1tXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+[programs.devnet]
+rate_limiter = "RateLm1tXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "Devnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+[test]
+startup_wait = 5000
+
+[workspace]
+members = ["programs/*"]
