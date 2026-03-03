@@ -15,7 +15,6 @@ env:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -36,13 +35,8 @@ jobs:
 
       - name: Install Solana CLI
         run: |
-          for i in 1 2 3; do
-            sh -c "$(curl -sSfL https://release.anza.xyz/v${{ env.SOLANA_VERSION }}/install)" && break
-            echo "Retry $i failed, trying again..."
-            sleep 10
-          done
+          sh -c "$(curl -sSfL https://release.anza.xyz/v${{ env.SOLANA_VERSION }}/install)"
           echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
           solana --version
 
       - name: Generate Solana keypair
