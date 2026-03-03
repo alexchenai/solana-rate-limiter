@@ -1,0 +1,69 @@
+name: Anchor Build and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  SOLANA_VERSION: "1.18.22"
+  ANCHOR_VERSION: "0.30.1"
+  NODE_VERSION: "18"
+  RUST_VERSION: "1.79.0"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "."
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v${{ env.SOLANA_VERSION }}/install)"
+          echo "/home/runner/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+          solana --version
+
+      - name: Generate Solana keypair
+        run: solana-keygen new --no-bip39-passphrase
+
+      - name: Install Anchor CLI
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor --tag v${{ env.ANCHOR_VERSION }} anchor-cli --locked
+          anchor --version
+
+      - name: Install Node dependencies
+        run: yarn install
+
+      - name: Build Anchor program
+        run: anchor build
+
+      - name: Run tests (localnet)
+        run: anchor test
+
+      - name: Deploy to devnet (main branch only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          SOLANA_DEPLOYER_KEY: ${{ secrets.SOLANA_DEPLOYER_KEY }}
+        run: |
+          echo "$SOLANA_DEPLOYER_KEY" > /tmp/deployer.json
+          solana config set --keypair /tmp/deployer.json --url devnet
+          solana airdrop 2
+          anchor deploy --provider.cluster devnet
+          echo "Deployed to devnet!"
+          solana program show $(anchor keys list | grep rate_limiter | awk '{print $2}') --url devnet
