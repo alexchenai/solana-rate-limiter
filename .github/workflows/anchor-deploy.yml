@@ -54,7 +54,7 @@ jobs:
           anchor --version
 
       - name: Install Node dependencies
-        run: yarn install
+        run: npm install --legacy-peer-deps
 
       - name: Build Anchor program
         run: anchor build
